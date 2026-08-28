@@ -1,0 +1,31 @@
+{
+  "_notes": "Train costs are fetched live where possible via train_data.py (real public rail data). Flight and bus costs below are ESTIMATED averages for hackathon scope — clearly not live booking prices. This file is the fallback/cache when live lookups fail or aren't available for a route.",
+
+  "local_transport": {
+    "chennai": {
+      "auto_rickshaw_per_km_inr": 15,
+      "metro_flat_fare_inr": 25,
+      "cab_per_km_inr": 20,
+      "daily_local_budget_estimate_inr": 400
+    }
+  },
+
+  "intercity_estimated": {
+    "_label": "ESTIMATED - not live pricing",
+    "bangalore_to_chennai": {
+      "train_inr": 450,
+      "bus_inr": 600,
+      "flight_inr": 3200
+    },
+    "delhi_to_chennai": {
+      "train_inr": 1800,
+      "bus_inr": null,
+      "flight_inr": 5500
+    },
+    "mumbai_to_chennai": {
+      "train_inr": 1400,
+      "bus_inr": null,
+      "flight_inr": 4800
+    }
+  }
+}

@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TravelMind — AI Trip Planner</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- IMPORTANT: frontend folder -->
+    <link rel="stylesheet" href="/frontend/style.css">
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar">
+
+    <div class="brand">
+        <div class="brand-icon">✦</div>
+        <span>TravelMind</span>
+    </div>
+
+    <nav>
+        <a href="#planner">New Trip</a>
+        <a href="#recommendations">Explore</a>
+        <a href="#budget">Budget</a>
+        <a href="#stay">Stay</a>
+    </nav>
+
+    <div class="ai-pill">
+        AI TRAVEL
+    </div>
+
+</header>
+
+
+<!-- ================= HERO ================= -->
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="hero-eyebrow">
+            AI TRAVEL OPTIMIZATION
+        </div>
+
+        <h1>
+            Plan a trip
+            <br>
+            <span>worth remembering.</span>
+        </h1>
+
+        <p>
+            TravelMind turns your budget, dates,
+            interests and travel style into a
+            realistic journey that adapts around you.
+        </p>
+
+        <div class="route-pills">
+
+            <button onclick="quickTrip('Chennai','Goa')">
+                Chennai → Goa
+            </button>
+
+            <button onclick="quickTrip('Goa','Chennai')">
+                Goa → Chennai
+            </button>
+
+            <button onclick="quickTrip('Chennai','Mumbai')">
+                Chennai → Mumbai
+            </button>
+
+            <button onclick="quickTrip('Mumbai','Chennai')">
+                Mumbai → Chennai
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<main>
+
+<!-- ================= PLANNER ================= -->
+
+<section
+    class="planner-wrapper"
+    id="planner"
+>
+
+    <div class="planner-card">
+
+        <div class="section-label">
+            01 / YOUR BRIEF
+        </div>
+
+        <h2>
+            Tell us what a good trip feels like.
+        </h2>
+
+        <p class="planner-subtitle">
+            Describe your trip naturally.
+            TravelMind extracts your route,
+            budget, travellers, interests and
+            travel style.
+        </p>
+
+        <textarea
+            id="tripInput"
+            placeholder="Example: 5 days from Chennai to Goa, ₹60000 total budget for 4 people, I love beaches, food and nightlife..."
+        ></textarea>
+
+
+        <!-- DATE / TRIP TYPE -->
+
+        <div class="trip-controls">
+
+            <div class="control">
+
+                <label>
+                    Departure
+                </label>
+
+                <input
+                    type="date"
+                    id="travelDate"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <label>
+                    Return
+                </label>
+
+                <input
+                    type="date"
+                    id="returnDate"
+                >
+
+            </div>
+
+
+            <div class="control">
+
+                <label>
+                    Trip type
+                </label>
+
+                <select id="tripType">
+
+                    <option value="round-trip">
+                        Round trip
+                    </option>
+
+                    <option value="one-way">
+                        One way
+                    </option>
+
+                    <option value="multi-leg">
+                        Multi-leg
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <button
+            class="build-btn"
+            onclick="buildTrip()"
+        >
+
+            <span>
+                ✦ Build my considered trip
+            </span>
+
+            <span>
+                →
+            </span>
+
+        </button>
+
+
+        <div
+            id="loading"
+            class="loading hidden"
+        >
+
+            <div class="spinner"></div>
+
+            <span>
+                Building your trip...
+            </span>
+
+        </div>
+
+
+        <div id="errorBox"></div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= RESULTS ================= -->
+
+<section
+    id="results"
+    class="results hidden"
+>
+
+
+<!-- PLAN HEADER -->
+
+<div class="plan-header">
+
+    <div>
+
+        <div class="section-label light">
+            YOUR PLAN
+        </div>
+
+        <h2 id="destinationTitle">
+            Goa
+        </h2>
+
+        <p id="tripMeta">
+            5 days · Balanced pace · 4 travellers
+        </p>
+
+    </div>
+
+
+    <div class="budget-fit">
+
+        <strong id="fitPercent">
+            85%
+        </strong>
+
+        <span>
+            Budget Fit
+        </span>
+
+    </div>
+
+</div>
+
+
+
+<!-- ================= SUMMARY + WEATHER ================= -->
+
+<div class="top-grid">
+
+
+    <!-- SUMMARY -->
+
+    <div class="result-card">
+
+        <div class="card-title">
+
+            <span class="card-icon">
+                ▣
+            </span>
+
+            Trip summary
+
+        </div>
+
+
+        <div class="stats-grid">
+
+            <div class="stat">
+
+                <span>
+                    Estimated total
+                </span>
+
+                <strong id="estimatedTotal">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="stat">
+
+                <span>
+                    Your budget
+                </span>
+
+                <strong id="yourBudget">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="stat">
+
+                <span>
+                    Per person
+                </span>
+
+                <strong id="perPerson">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="stat">
+
+                <span>
+                    Stops planned
+                </span>
+
+                <strong id="stopCount">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- WEATHER -->
+
+    <div class="result-card weather-card">
+
+        <div class="card-title">
+
+            <span class="card-icon">
+                ◌
+            </span>
+
+            Weather outlook
+
+        </div>
+
+
+        <div class="weather-content">
+
+            <div>
+
+                <strong id="temperature">
+                    --°C
+                </strong>
+
+                <p id="weatherDescription">
+                    Checking destination weather...
+                </p>
+
+                <small id="weatherSource">
+                    --
+                </small>
+
+            </div>
+
+
+            <div class="rain-box">
+
+                <span class="rain-icon">
+                    ☁
+                </span>
+
+                <strong id="rainChance">
+                    --%
+                </strong>
+
+                <small>
+                    rain chance
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ================= BEST TIME ================= -->
+
+<div class="result-card season-card">
+
+    <div>
+
+        <div class="card-title">
+
+            <span class="card-icon">
+                ◷
+            </span>
+
+            Best time to travel
+
+        </div>
+
+        <strong id="bestMonth">
+            --
+        </strong>
+
+        <p id="seasonStatus">
+            --
+        </p>
+
+    </div>
+
+
+    <div class="departure-info">
+
+        <span>
+            Departure
+        </span>
+
+        <strong id="selectedDate">
+            --
+        </strong>
+
+    </div>
+
+</div>
+
+
+
+<!-- ================= ITINERARY ================= -->
+
+<div class="result-card itinerary-card">
+
+    <div class="card-title">
+
+        <span class="card-icon">
+            ▣
+        </span>
+
+        Day-by-day itinerary
+
+    </div>
+
+
+    <div id="itineraryContainer"></div>
+
+</div>
+
+
+
+<!-- ================= RECOMMENDATIONS ================= -->
+
+<section
+    id="recommendations"
+    class="recommendations-section"
+>
+
+    <div class="section-heading">
+
+        <div>
+
+            <div class="section-label">
+                CURATED FOR YOU
+            </div>
+
+            <h2>
+                Places worth the detour.
+            </h2>
+
+        </div>
+
+        <span class="heading-note">
+            Matched to your interests
+        </span>
+
+    </div>
+
+
+    <div
+        id="recommendationGrid"
+        class="recommendation-grid"
+    ></div>
+
+</section>
+
+
+
+<!-- ================= BUDGET ================= -->
+
+<div
+    class="result-card"
+    id="budget"
+>
+
+    <div class="card-title">
+
+        <span class="card-icon">
+            ▣
+        </span>
+
+        Budget breakdown
+
+    </div>
+
+
+    <div class="budget-layout">
+
+
+        <div class="donut-wrapper">
+
+            <div
+                class="donut"
+                id="budgetDonut"
+            >
+
+                <div class="donut-center">
+
+                    <strong id="budgetCenter">
+                        ₹0
+                    </strong>
+
+                    <span>
+                        estimated
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="budget-list">
+
+
+            <div class="budget-row">
+
+                <span>
+                    <i class="dot stay-dot"></i>
+                    Stay
+                </span>
+
+                <div>
+
+                    <small id="stayPercent">
+                        0%
+                    </small>
+
+                    <strong id="stayAmount">
+                        ₹0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="budget-row">
+
+                <span>
+                    <i class="dot food-dot"></i>
+                    Food
+                </span>
+
+                <div>
+
+                    <small id="foodPercent">
+                        0%
+                    </small>
+
+                    <strong id="foodAmount">
+                        ₹0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="budget-row">
+
+                <span>
+                    <i class="dot activity-dot"></i>
+                    Activities
+                </span>
+
+                <div>
+
+                    <small id="activityPercent">
+                        0%
+                    </small>
+
+                    <strong id="activityAmount">
+                        ₹0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="budget-row">
+
+                <span>
+                    <i class="dot transport-dot"></i>
+                    Transport
+                </span>
+
+                <div>
+
+                    <small id="transportPercent">
+                        0%
+                    </small>
+
+                    <strong id="transportAmount">
+                        ₹0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="budget-row">
+
+                <span>
+                    <i class="dot local-dot"></i>
+                    Local travel
+                </span>
+
+                <div>
+
+                    <small id="localPercent">
+                        0%
+                    </small>
+
+                    <strong id="localAmount">
+                        ₹0
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ================= GETTING THERE ================= -->
+
+<div class="result-card">
+
+    <div class="card-title">
+
+        <span class="card-icon">
+            ✈
+        </span>
+
+        Getting there
+
+    </div>
+
+
+    <p class="section-note">
+
+        Cheapest option is automatically selected
+        and included in the estimated trip budget.
+        Transport prices are planning estimates.
+
+    </p>
+
+
+    <div
+        id="transportGrid"
+        class="transport-grid"
+    ></div>
+
+</div>
+
+
+
+<!-- ================= HOTELS ================= -->
+
+<div
+    class="result-card"
+    id="stay"
+>
+
+    <div class="card-title">
+
+        <span class="card-icon">
+            ⌂
+        </span>
+
+        Where to stay
+
+    </div>
+
+
+    <p class="section-note">
+
+        Compare a cheapest, popular and premium
+        stay. The cheapest suitable option is used
+        for the protected budget calculation.
+
+    </p>
+
+
+    <div
+        id="hotelGrid"
+        class="hotel-grid"
+    ></div>
+
+</div>
+
+
+
+<!-- ================= ADAPTIVE REPLANNING ================= -->
+
+<div class="result-card adaptive-card">
+
+    <div>
+
+        <div class="section-label">
+            LIVE RE-PLAN
+        </div>
+
+        <h2>
+            Something changed?
+        </h2>
+
+        <p>
+            Tell TravelMind what happened.
+            Your remaining trip is recalculated
+            around the new constraint.
+        </p>
+
+    </div>
+
+
+    <div class="adaptive-form">
+
+        <textarea
+            id="adaptInput"
+            placeholder="Example: I spent ₹2500 extra today, or add one more day, or reduce my budget to ₹45000..."
+        ></textarea>
+
+
+        <button
+            onclick="adaptTrip()"
+            class="secondary-btn"
+        >
+            ✦ Re-access & adapt trip
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<!-- ================= SAVE ================= -->
+
+<div class="save-card">
+
+    <div>
+
+        <div class="section-label">
+            YOUR TRAVELMIND PLAN
+        </div>
+
+        <h2>
+            Keep this trip.
+        </h2>
+
+        <p id="saveMessage">
+            Save your generated plan and
+            re-access it later.
+        </p>
+
+    </div>
+
+
+    <button
+        onclick="saveTrip()"
+        class="save-btn"
+    >
+        Save this trip →
+    </button>
+
+</div>
+
+
+
+<!-- ================= TRAVEL INSIGHT ================= -->
+
+<section class="insight-card">
+
+    <div>
+
+        <div class="section-label">
+            TRAVELMIND INSIGHT
+        </div>
+
+        <h2>
+            Your trip, optimized around you.
+        </h2>
+
+        <p id="personaText">
+            Balanced Explorer
+        </p>
+
+    </div>
+
+
+    <button
+        onclick="document.getElementById('planner').scrollIntoView({behavior:'smooth'})"
+    >
+        Plan another trip →
+    </button>
+
+</section>
+
+
+</section>
+
+</main>
+
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer>
+
+    <strong>
+        TravelMind
+    </strong>
+
+    <span>
+        AI-powered considered journeys.
+    </span>
+
+</footer>
+
+
+
+<!-- =====================================================
+     IMPORTANT
+     Load JavaScript from /frontend, NOT /static
+===================================================== -->
+
+<script src="/frontend/app.js"></script>
+
+</body>
+</html>

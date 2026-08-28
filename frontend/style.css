@@ -1,0 +1,2942 @@
+/* =========================================================
+   TRAVELMIND — FINAL PREMIUM UI (3D EDITION)
+   Same brand tokens as before, rebuilt with real depth:
+   perspective, tilt, extrusion, layered shadows.
+   Signature element: the planner card floats on a 3D
+   pedestal and every card in the results tilts toward
+   the cursor like it's resting on a physical surface.
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+    --navy: #102858;
+    --navy-dark: #091b3e;
+    --teal: #238b86;
+    --teal-dark: #176b68;
+    --orange: #ff7a1a;
+    --gold: #f4b942;
+
+    --cream: #f6f2e9;
+    --cream-2: #eee8dc;
+    --white: #fffdfa;
+
+    --text: #102858;
+    --muted: #62789b;
+    --border: #ded7ca;
+
+    --shadow-sm: 0 8px 25px rgba(16,40,88,.06);
+    --shadow-md: 0 18px 45px rgba(16,40,88,.09);
+    --shadow-lg: 0 30px 80px rgba(16,40,88,.13);
+
+    --radius: 28px;
+
+    /* ---- 3D system (new) ---- */
+    --persp: 1600px;
+    --tilt-max: 9deg;
+    --ease-3d: cubic-bezier(.22, 1, .36, 1);
+
+    /* Layered "extrusion" shadows: a stack of thin steps + a soft
+       ambient throw. This is what makes flat cards read as solid
+       objects sitting above the page rather than printed on it. */
+    --depth-rest:
+        0 1px 0 rgba(16,40,88,.10),
+        0 2px 0 rgba(16,40,88,.08),
+        0 3px 0 rgba(16,40,88,.06),
+        0 22px 40px -12px rgba(16,40,88,.28);
+
+    --depth-hover:
+        0 1px 0 rgba(16,40,88,.10),
+        0 3px 0 rgba(16,40,88,.09),
+        0 6px 0 rgba(16,40,88,.07),
+        0 40px 70px -18px rgba(16,40,88,.34);
+
+    --depth-press:
+        0 1px 0 rgba(16,40,88,.10),
+        0 6px 14px -6px rgba(16,40,88,.22);
+
+    --bevel-light: inset 0 1px 0 rgba(255,255,255,.35);
+    --bevel-dark: inset 0 -2px 4px rgba(9,27,62,.25);
+
+    /* Budget donut category colors — app.js reads these by name to
+       build the conic-gradient. Without them the donut renders with
+       no color at all (an invalid var() makes the whole background
+       declaration drop, even though it's set inline). */
+    --budget-stay: var(--navy);
+    --budget-food: var(--orange);
+    --budget-activity: #4b8caf;
+    --budget-transport: var(--gold);
+    --budget-local: var(--teal);
+}
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    * {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+    }
+}
+
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(circle at 10% 15%, rgba(35,139,134,.06), transparent 25%),
+        radial-gradient(circle at 90% 40%, rgba(255,122,26,.045), transparent 28%),
+        var(--cream);
+
+    color: var(--text);
+
+    font-family: "DM Sans", Arial, sans-serif;
+
+    line-height: 1.6;
+
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Utility: wrap any block in this to give its children a 3D stage.
+   Add data-tilt to an element inside a .stage-3d to get cursor-tilt
+   via the small script noted at the bottom of this file. */
+.stage-3d {
+    perspective: var(--persp);
+}
+
+[data-tilt] {
+    transform-style: preserve-3d;
+    transition: transform .5s var(--ease-3d), box-shadow .35s ease;
+    will-change: transform;
+}
+
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+
+    height: 88px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 5.5%;
+
+    background: rgba(255,253,250,.94);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    border-bottom: 1px solid rgba(222,215,202,.85);
+
+    box-shadow: 0 5px 25px rgba(16,40,88,.035);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: 34px;
+    font-weight: 700;
+
+    letter-spacing: -1.3px;
+
+    color: var(--navy);
+}
+
+.brand-icon {
+    width: 56px;
+    height: 56px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 17px;
+
+    background: linear-gradient(155deg, #2ea39d 0%, var(--teal) 55%, var(--teal-dark) 100%);
+
+    color: #ffe49a;
+
+    font-size: 28px;
+
+    box-shadow:
+        var(--bevel-light),
+        var(--bevel-dark),
+        0 12px 28px rgba(35,139,134,.28);
+
+    transform: perspective(400px) rotateX(6deg);
+}
+
+.navbar nav {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+
+    margin-left: auto;
+}
+
+.navbar nav a {
+    position: relative;
+
+    color: var(--navy);
+
+    text-decoration: none;
+
+    font-weight: 700;
+
+    transition: .2s ease, transform .25s var(--ease-3d);
+
+    display: inline-block;
+}
+
+.navbar nav a::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    bottom: -9px;
+
+    width: 0;
+    height: 2px;
+
+    background: var(--orange);
+
+    transition: width .25s ease;
+}
+
+.navbar nav a:hover {
+    color: var(--orange);
+    transform: translateY(-2px);
+}
+
+.navbar nav a:hover::after {
+    width: 100%;
+}
+
+.saved-open {
+    margin-left: 42px;
+
+    padding: 12px 21px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.7);
+
+    color: var(--navy);
+
+    font-weight: 700;
+
+    transition: .2s ease, box-shadow .2s ease;
+}
+
+.saved-open:hover {
+    border-color: var(--teal);
+
+    color: var(--teal);
+
+    transform: translateY(-2px);
+
+    box-shadow: var(--depth-rest);
+}
+
+/* index.html's navbar actually renders .ai-pill, not .saved-open */
+.ai-pill {
+    margin-left: 42px;
+
+    padding: 10px 18px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(120deg, var(--teal), var(--teal-dark));
+
+    color: white;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+
+    box-shadow: var(--bevel-light), 0 8px 18px rgba(35,139,134,.25);
+}
+
+/* =========================================================
+   HERO — layered 3D parallax scene
+   ========================================================= */
+
+.hero {
+    min-height: 500px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 85px 6% 120px;
+
+    color: white;
+
+    background:
+        radial-gradient(
+            circle at 78% 18%,
+            rgba(255,122,26,.23),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 90% 90%,
+            rgba(35,139,134,.20),
+            transparent 30%
+        ),
+        linear-gradient(
+            120deg,
+            #102758 0%,
+            #1d3267 52%,
+            #40364e 100%
+        );
+
+    position: relative;
+
+    overflow: hidden;
+
+    perspective: var(--persp);
+}
+
+/* Three rings at different depths = actual parallax feel instead
+   of one flat halo. Each ring drifts at its own slow speed. */
+.hero::after {
+    content: "";
+
+    position: absolute;
+
+    width: 600px;
+    height: 600px;
+
+    right: -260px;
+    bottom: -390px;
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    border-radius: 50%;
+
+    transform: translateZ(-120px) scale(1.08);
+    animation: drift-slow 22s ease-in-out infinite;
+}
+
+.hero::before {
+    content: "";
+
+    position: absolute;
+
+    width: 340px;
+    height: 340px;
+
+    left: 6%;
+    top: -140px;
+
+    border: 1px solid rgba(255,122,26,.16);
+
+    border-radius: 50%;
+
+    transform: translateZ(-60px);
+    animation: drift-slow 15s ease-in-out infinite reverse;
+}
+
+@keyframes drift-slow {
+    0%, 100% { transform: translate3d(0, 0, -80px) scale(1); }
+    50%      { transform: translate3d(-16px, 18px, -80px) scale(1.04); }
+}
+
+.hero-content {
+    width: min(1180px, 100%);
+
+    margin: auto;
+
+    position: relative;
+
+    z-index: 2;
+    transform: translateZ(40px);
+}
+
+.hero-eyebrow,
+.section-label {
+    font-size: 12px;
+
+    font-weight: 800;
+
+    letter-spacing: 3px;
+
+    color: var(--orange);
+}
+
+.hero h1 {
+    max-width: 900px;
+
+    margin: 17px 0 25px;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: clamp(58px, 7vw, 96px);
+
+    line-height: .97;
+
+    letter-spacing: -4px;
+
+    /* subtle extruded-type effect: a few stacked, darkening layers
+       behind the main glyph color instead of a flat text-shadow blur */
+    text-shadow:
+        0 1px 0 rgba(9,27,62,.35),
+        0 2px 0 rgba(9,27,62,.28),
+        0 3px 0 rgba(9,27,62,.20),
+        0 18px 30px rgba(9,27,62,.35);
+}
+
+.hero h1 span {
+    color: #fff8e8;
+}
+
+.hero p {
+    max-width: 790px;
+
+    margin: 0 0 34px;
+
+    color: #dce5f7;
+
+    font-size: 18px;
+
+    line-height: 1.75;
+}
+
+.route-pills {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+}
+
+.route-pills button {
+    padding: 12px 19px;
+
+    border: 1px solid rgba(255,255,255,.28);
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.045);
+
+    color: white;
+
+    font-weight: 600;
+
+    backdrop-filter: blur(8px);
+
+    transition: .22s var(--ease-3d);
+}
+
+.route-pills button:hover {
+    background: white;
+
+    color: var(--navy);
+
+    transform: translateY(-3px) scale(1.03);
+
+    box-shadow: var(--depth-hover);
+}
+
+.route-pills button:active {
+    transform: translateY(0) scale(.98);
+
+    box-shadow: var(--depth-press);
+}
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+main {
+    width: min(1240px, 90%);
+
+    margin: 0 auto;
+}
+
+/* =========================================================
+   PLANNER — the signature floating pedestal
+   ========================================================= */
+
+.planner-wrapper {
+    position: relative;
+
+    z-index: 10;
+
+    margin-top: -70px;
+
+    perspective: var(--persp);
+}
+
+.planner-card {
+    padding: 50px;
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+
+    border-radius: 34px;
+
+    box-shadow: var(--depth-rest);
+
+    transform-style: preserve-3d;
+    transform: rotateX(1.5deg);
+
+    transition: transform .6s var(--ease-3d), box-shadow .5s ease;
+}
+
+.planner-card:hover {
+    transform: rotateX(0deg) translateY(-4px);
+    box-shadow: var(--depth-hover);
+}
+
+.planner-card h2 {
+    max-width: 850px;
+
+    margin: 15px 0 12px;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: clamp(36px, 4vw, 55px);
+
+    line-height: 1.05;
+
+    letter-spacing: -1.8px;
+}
+
+.planner-subtitle,
+.muted {
+    color: var(--muted);
+
+    line-height: 1.65;
+}
+
+.form-grid {
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 17px;
+
+    margin-top: 30px;
+}
+
+.form-grid label {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.form-grid select,
+.form-grid input {
+    width: 100%;
+
+    margin-top: 7px;
+
+    padding: 13px 14px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 13px;
+
+    background: #faf8f2;
+
+    color: var(--navy);
+
+    outline: none;
+
+    box-shadow: inset 0 2px 4px rgba(16,40,88,.05);
+
+    transition: .2s ease;
+}
+
+.form-grid select:focus,
+.form-grid input:focus {
+    border-color: var(--teal);
+
+    background: white;
+
+    box-shadow: inset 0 1px 2px rgba(16,40,88,.04), 0 0 0 4px rgba(35,139,134,.08);
+}
+
+.interest-row {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 13px;
+
+    margin-top: 22px;
+
+    color: var(--muted);
+}
+
+.interest-row > span {
+    margin-right: 4px;
+
+    color: var(--navy);
+
+    font-weight: 800;
+}
+
+.interest-row label {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 7px 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 999px;
+
+    background: #faf8f2;
+
+    font-size: 13px;
+
+    cursor: pointer;
+
+    transition: .2s var(--ease-3d);
+}
+
+.interest-row label:hover {
+    border-color: var(--teal);
+
+    color: var(--teal);
+
+    transform: translateY(-2px);
+
+    box-shadow: var(--depth-rest);
+}
+
+.interest-row input {
+    width: auto;
+
+    margin: 0;
+}
+
+#tripInput {
+    width: 100%;
+
+    min-height: 145px;
+
+    margin-top: 22px;
+
+    padding: 19px 20px;
+
+    resize: vertical;
+
+    border: 1px solid var(--border);
+
+    border-radius: 19px;
+
+    background: #fbfaf6;
+
+    color: var(--navy);
+
+    outline: none;
+
+    line-height: 1.7;
+
+    box-shadow: inset 0 2px 6px rgba(16,40,88,.05);
+
+    transition: .2s ease;
+}
+
+#tripInput:focus {
+    background: white;
+
+    border-color: var(--teal);
+
+    box-shadow: inset 0 1px 2px rgba(16,40,88,.03), 0 0 0 4px rgba(35,139,134,.08);
+}
+
+#tripInput::placeholder {
+    color: #8b99ad;
+}
+
+/* index.html renders these as .trip-controls/.control, not .form-grid
+   — that class was never being matched at all, which is why these
+   fields looked like tiny, unstyled default browser inputs. */
+.trip-controls {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+    margin-top: 22px;
+}
+
+.control {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+.control label {
+    color: var(--muted);
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.control input,
+.control select {
+    padding: 13px 14px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 13px;
+
+    background: #faf8f2;
+
+    color: var(--navy);
+
+    outline: none;
+
+    box-shadow: inset 0 2px 4px rgba(16,40,88,.05);
+
+    transition: .2s ease;
+}
+
+.control input:focus,
+.control select:focus {
+    border-color: var(--teal);
+
+    background: white;
+
+    box-shadow: inset 0 1px 2px rgba(16,40,88,.03), 0 0 0 4px rgba(35,139,134,.08);
+}
+
+/* 3D pressable button: a real bottom "lip" that compresses on click,
+   instead of just a color swap. */
+.build-btn {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-top: 16px;
+
+    padding: 17px 22px;
+
+    border: 0;
+
+    border-radius: 15px;
+
+    background: var(--navy);
+
+    color: white;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 6px 0 var(--navy-dark),
+        0 13px 30px rgba(16,40,88,.25);
+
+    transform: translateY(0);
+
+    transition: transform .15s var(--ease-3d), box-shadow .15s var(--ease-3d), background .22s ease;
+}
+
+.build-btn:hover {
+    background: var(--teal);
+
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 9px 0 var(--teal-dark),
+        0 20px 38px rgba(35,139,134,.28);
+}
+
+.build-btn:active {
+    transform: translateY(3px);
+
+    box-shadow:
+        0 3px 0 var(--teal-dark),
+        0 8px 18px rgba(35,139,134,.22);
+}
+
+.loading {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 16px;
+
+    color: var(--teal);
+
+    font-weight: 700;
+}
+
+.spinner {
+    width: 19px;
+    height: 19px;
+
+    border: 3px solid #dbe8e6;
+
+    border-top-color: var(--teal);
+
+    border-radius: 50%;
+
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#errorBox {
+    margin-top: 15px;
+
+    color: #b42318;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   RESULTS
+   ========================================================= */
+
+.results {
+    padding: 75px 0 100px;
+    perspective: var(--persp);
+}
+
+/* =========================================================
+   PLAN HERO
+   ========================================================= */
+
+.plan-header {
+    position: relative;
+
+    min-height: 310px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 40px;
+
+    padding: 58px 65px;
+
+    overflow: hidden;
+
+    border-radius: 34px;
+
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(255,122,26,.18),
+            transparent 28%
+        ),
+        linear-gradient(
+            120deg,
+            #122c62,
+            #293b70 55%,
+            #49394e
+        );
+
+    color: white;
+
+    box-shadow: var(--depth-rest);
+}
+
+.plan-header::after {
+    content: "";
+
+    position: absolute;
+
+    width: 550px;
+    height: 550px;
+
+    right: -260px;
+    bottom: -430px;
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    border-radius: 50%;
+
+    transform: translateZ(-80px);
+}
+
+.plan-header > div:first-child {
+    position: relative;
+
+    z-index: 2;
+}
+
+.section-label.light {
+    color: #ff9a48;
+}
+
+.plan-header h2 {
+    margin: 10px 0 8px;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: clamp(62px, 7vw, 92px);
+
+    line-height: .95;
+
+    letter-spacing: -4px;
+
+    color: white;
+
+    text-shadow: 0 2px 0 rgba(9,27,62,.4), 0 20px 34px rgba(9,27,62,.4);
+}
+
+.plan-header p {
+    margin: 0;
+
+    color: #dce5f7;
+
+    font-size: 17px;
+}
+
+.route-big {
+    margin-top: 10px;
+
+    color: #ffd49d;
+
+    font-size: 18px;
+
+    font-weight: 800;
+}
+
+/* The budget "chip" now reads as a physical tile tilted in space,
+   not a rotated flat square. */
+.budget-fit {
+    position: relative;
+
+    z-index: 3;
+
+    flex-shrink: 0;
+
+    width: 145px;
+    height: 145px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 32px;
+
+    background: linear-gradient(160deg, #ff9346, var(--orange) 60%, #e8630a);
+
+    color: var(--navy);
+
+    box-shadow:
+        var(--bevel-light),
+        var(--bevel-dark),
+        0 24px 50px rgba(0,0,0,.28);
+
+    transform: perspective(700px) rotateY(-8deg) rotateX(4deg);
+
+    transition: transform .4s var(--ease-3d);
+}
+
+.budget-fit:hover {
+    transform: perspective(700px) rotateY(0deg) rotateX(0deg) translateY(-4px);
+}
+
+.budget-fit strong {
+    font-size: 40px;
+
+    line-height: 1;
+}
+
+.budget-fit span {
+    margin-top: 8px;
+
+    font-size: 12px;
+
+    font-weight: 800;
+}
+
+/* =========================================================
+   ACTION BAR
+   ========================================================= */
+
+.action-bar {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    padding: 19px 0;
+}
+
+.action-bar button {
+    padding: 11px 17px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 13px;
+
+    background: var(--white);
+
+    color: var(--navy);
+
+    font-weight: 700;
+
+    transition: .2s var(--ease-3d);
+}
+
+.action-bar button:hover {
+    border-color: var(--teal);
+
+    color: var(--teal);
+
+    transform: translateY(-3px);
+
+    box-shadow: var(--depth-rest);
+}
+
+.action-bar button:active {
+    transform: translateY(-1px);
+    box-shadow: var(--depth-press);
+}
+
+.action-bar button:first-child {
+    background: var(--teal);
+
+    color: white;
+
+    border-color: var(--teal);
+}
+
+/* =========================================================
+   INSIGHT STRIP
+   ========================================================= */
+
+.insight-strip {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 13px;
+
+    margin-bottom: 22px;
+}
+
+.insight-strip div {
+    padding: 18px 20px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 19px;
+
+    background: #eee8da;
+
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -6px 12px -8px rgba(16,40,88,.12);
+}
+
+.insight-strip b,
+.insight-strip span {
+    display: block;
+}
+
+.insight-strip b {
+    color: var(--orange);
+
+    font-size: 11px;
+
+    letter-spacing: 1.5px;
+
+    text-transform: uppercase;
+}
+
+.insight-strip span {
+    margin-top: 5px;
+
+    color: var(--navy);
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   RESULT CARDS — tilt toward the cursor
+   ========================================================= */
+
+.top-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 22px;
+}
+
+.result-card {
+    margin-top: 22px;
+
+    padding: 38px;
+
+    background: rgba(255,253,250,.97);
+
+    border: 1px solid var(--border);
+
+    border-radius: 30px;
+
+    box-shadow: var(--depth-rest);
+
+    transform-style: preserve-3d;
+
+    transition:
+        transform .35s var(--ease-3d),
+        box-shadow .35s ease;
+}
+
+.result-card:hover {
+    box-shadow: var(--depth-hover);
+    transform: translateY(-6px);
+}
+
+.card-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 26px;
+
+    color: var(--navy);
+
+    font-size: 22px;
+
+    font-weight: 800;
+}
+
+.card-icon {
+    color: var(--orange);
+
+    font-size: 21px;
+}
+
+.card-title small {
+    margin-left: auto;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.stats-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 30px;
+}
+
+.stat {
+    padding: 17px;
+
+    border-radius: 18px;
+
+    background: #f7f3e9;
+
+    border: 1px solid rgba(222,215,202,.7);
+
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -8px 14px -10px rgba(16,40,88,.10);
+}
+
+.stat span {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+.stat strong {
+    color: var(--navy);
+
+    font-size: 27px;
+
+    line-height: 1.15;
+}
+
+/* =========================================================
+   WEATHER
+   ========================================================= */
+
+.weather-content {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 30px;
+}
+
+.weather-content > div:first-child > strong {
+    font-size: 52px;
+
+    line-height: 1;
+}
+
+.weather-content p {
+    max-width: 230px;
+
+    margin: 10px 0 0;
+
+    color: var(--muted);
+}
+
+.rain-box {
+    width: 125px;
+    height: 125px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 25px;
+
+    background: radial-gradient(circle at 35% 30%, #faf6ec, #f1eadc 65%);
+
+    box-shadow: var(--bevel-light), var(--bevel-dark), 0 10px 20px rgba(16,40,88,.08);
+}
+
+.rain-box span {
+    font-size: 24px;
+}
+
+.rain-box strong {
+    font-size: 25px;
+}
+
+.rain-box small {
+    color: var(--muted);
+}
+
+#weatherSource {
+    display: block;
+
+    margin-top: 18px;
+
+    color: var(--muted);
+}
+
+/* =========================================================
+   TRANSPORT — cards lift like physical fare tickets
+   ========================================================= */
+
+.transport-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 17px;
+}
+
+.transport-card {
+    position: relative;
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: flex-start;
+
+    gap: 4px 14px;
+
+    padding: 23px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 22px;
+
+    background: #faf7f0;
+
+    transform-style: preserve-3d;
+
+    transition:
+        transform .3s var(--ease-3d),
+        box-shadow .3s ease,
+        border-color .3s ease;
+}
+
+.transport-label {
+    position: absolute;
+
+    top: -12px;
+
+    right: 18px;
+
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    background: var(--orange);
+
+    color: white;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: .6px;
+
+    box-shadow: 0 8px 16px rgba(255,122,26,.3);
+}
+
+.transport-main {
+    flex: 1 1 150px;
+
+    min-width: 0;
+}
+
+.transport-price {
+    flex: 1 1 100%;
+
+    display: flex;
+
+    align-items: baseline;
+
+    justify-content: space-between;
+
+    margin-top: 14px;
+
+    padding-top: 14px;
+
+    border-top: 1px solid var(--border);
+}
+
+.transport-price strong {
+    color: var(--navy);
+
+    font-size: 24px;
+}
+
+.transport-price span {
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+.transport-card:hover {
+    transform: translateY(-7px) scale(1.015);
+
+    border-color: rgba(35,139,134,.4);
+
+    box-shadow: var(--depth-hover);
+}
+
+.transport-card.selected {
+    border: 2px solid var(--teal);
+
+    background: #f5faf8;
+
+    box-shadow: var(--depth-rest), 0 0 0 4px rgba(35,139,134,.10);
+
+    transform: translateY(-3px);
+}
+
+.transport-top {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+.transport-icon {
+    font-size: 27px;
+}
+
+.mini-tag,
+.tag {
+    display: inline-block;
+
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background: #eaf3ef;
+
+    color: var(--teal);
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: .5px;
+}
+
+.transport-card h3 {
+    margin: 18px 0 7px;
+
+    color: var(--navy);
+
+    font-size: 20px;
+}
+
+.transport-card > strong {
+    color: var(--navy);
+
+    font-size: 26px;
+}
+
+.transport-card p {
+    margin: 8px 0;
+
+    color: var(--muted);
+}
+
+.transport-card small {
+    display: block;
+
+    color: var(--muted);
+
+    line-height: 1.45;
+}
+
+.transport-card button {
+    width: 100%;
+
+    margin-top: 15px;
+
+    padding: 10px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 11px;
+
+    background: white;
+
+    color: var(--navy);
+
+    font-weight: 800;
+
+    transition: .2s ease;
+}
+
+.transport-card button:hover {
+    background: var(--teal);
+
+    border-color: var(--teal);
+
+    color: white;
+}
+
+.transport-card.selected button {
+    background: var(--teal);
+
+    border-color: var(--teal);
+
+    color: white;
+}
+
+/* =========================================================
+   ITINERARY — beaded timeline with real sphere-like dots
+   ========================================================= */
+
+.day-block {
+    margin-top: 38px;
+}
+
+.day-block:first-child {
+    margin-top: 0;
+}
+
+.day-heading {
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    margin-bottom: 18px;
+}
+
+.day-badge,
+.day-number {
+    display: grid;
+
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: linear-gradient(160deg, #1a3a7a, var(--navy) 60%, var(--navy-dark));
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: 800;
+
+    box-shadow: var(--bevel-light), 0 6px 14px rgba(16,40,88,.3);
+}
+
+.day-title {
+    color: var(--muted);
+
+    font-weight: 700;
+}
+
+.day-heading > div > span {
+    display: block;
+
+    color: var(--orange);
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+}
+
+.day-heading h3 {
+    margin: 3px 0 0;
+
+    color: var(--navy);
+
+    font-size: 20px;
+}
+
+.timeline {
+    margin-left: 9px;
+
+    padding-left: 28px;
+
+    border-left: 2px solid #dce0dc;
+}
+
+.timeline-item {
+    position: relative;
+
+    display: flex;
+
+    gap: 16px;
+
+    align-items: flex-start;
+
+    padding: 5px 0 28px;
+}
+
+/* The bead is drawn by ::before below; app.js also renders a text
+   glyph in .timeline-dot for semantics, which we hide visually so
+   there isn't a second, plainer dot floating next to the nice one. */
+.timeline-dot {
+    display: none;
+}
+
+.timeline-item > .timeline-time {
+    flex: 0 0 60px;
+
+    padding-top: 2px;
+
+    font-size: 13px;
+}
+
+.timeline-content {
+    flex: 1;
+
+    min-width: 0;
+}
+
+.timeline-type {
+    margin-bottom: 3px;
+
+    color: var(--teal);
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+}
+
+.timeline-content h4 {
+    margin: 2px 0 4px;
+
+    color: var(--navy);
+
+    font-size: 17px;
+}
+
+.timeline-content p {
+    margin: 0;
+
+    color: var(--muted);
+
+    line-height: 1.5;
+}
+
+.rating {
+    display: inline-block;
+
+    margin-top: 8px;
+
+    margin-right: 12px;
+
+    color: #b8860b;
+
+    font-weight: 700;
+
+    font-size: 13px;
+}
+
+.item-cost {
+    display: inline-block;
+
+    margin-top: 8px;
+
+    color: var(--navy);
+
+    font-weight: 800;
+
+    font-size: 13px;
+}
+
+.weather-warning {
+    margin-top: 10px;
+
+    padding: 9px 13px;
+
+    border-radius: 11px;
+
+    background: #fff3e2;
+
+    color: #a15c00;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+.timeline-item::before {
+    content: "";
+
+    position: absolute;
+
+    left: -35px;
+
+    top: 10px;
+
+    width: 12px;
+    height: 12px;
+
+    border-radius: 50%;
+
+    background: radial-gradient(circle at 32% 28%, #ffc07f, var(--orange) 60%, #d4600a);
+
+    box-shadow:
+        0 0 0 5px var(--white),
+        0 0 0 6px rgba(255,122,26,.15),
+        0 3px 5px rgba(180,80,10,.4);
+}
+
+.timeline-item.meal::before {
+    background: radial-gradient(circle at 32% 28%, #6fc9c4, var(--teal) 60%, var(--teal-dark));
+
+    box-shadow:
+        0 0 0 5px var(--white),
+        0 0 0 6px rgba(35,139,134,.15),
+        0 3px 5px rgba(23,107,104,.4);
+}
+
+.timeline-top {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.timeline-time {
+    color: var(--orange);
+
+    font-weight: 800;
+}
+
+.timeline-name {
+    color: var(--navy);
+
+    font-weight: 800;
+}
+
+.timeline-cost {
+    color: var(--navy);
+
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.timeline-desc {
+    margin-top: 5px;
+
+    color: var(--muted);
+
+    line-height: 1.55;
+}
+
+/* =========================================================
+   RECOMMENDATIONS
+   ========================================================= */
+
+.recommendations-section {
+    margin-top: 85px;
+}
+
+.section-heading {
+    display: flex;
+
+    align-items: flex-end;
+
+    justify-content: space-between;
+
+    gap: 30px;
+}
+
+.recommendations-section h2 {
+    margin: 12px 0 0;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: clamp(42px, 5vw, 64px);
+
+    line-height: 1;
+
+    letter-spacing: -2px;
+}
+
+.heading-note {
+    color: var(--muted);
+
+    font-size: 14px;
+}
+
+.recommendation-grid,
+.hotel-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 20px;
+
+    margin-top: 28px;
+}
+
+.recommendation-card,
+.hotel-card {
+    overflow: hidden;
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+
+    border-radius: 25px;
+
+    box-shadow: var(--depth-rest);
+
+    transform-style: preserve-3d;
+
+    transition:
+        transform .35s var(--ease-3d),
+        box-shadow .35s ease;
+}
+
+.recommendation-card:hover,
+.hotel-card:hover {
+    transform: translateY(-8px);
+
+    box-shadow: var(--depth-hover);
+}
+
+.recommendation-card img,
+.hotel-card img {
+    display: block;
+
+    width: 100%;
+
+    height: 230px;
+
+    object-fit: cover;
+
+    background:
+        linear-gradient(
+            135deg,
+            #9abcc0,
+            #467e91
+        );
+
+    transition: transform .6s var(--ease-3d);
+}
+
+.recommendation-card:hover img,
+.hotel-card:hover img {
+    transform: scale(1.06) translateZ(0);
+}
+
+/* app.js renders .recommendation-image/.recommendation-body and
+   .hotel-image/.hotel-body — NOT .recommendation-content/.hotel-info.
+   That mismatch is why text sat outside the card shape entirely. */
+
+.recommendation-image,
+.hotel-image {
+    overflow: hidden;
+}
+
+.recommendation-body,
+.hotel-body {
+    position: relative;
+
+    padding: 23px;
+}
+
+.recommendation-category,
+.hotel-tier {
+    margin-bottom: 6px;
+
+    color: var(--orange);
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+
+    text-transform: uppercase;
+}
+
+.recommendation-body h3,
+.hotel-body h3 {
+    margin: 0 0 7px;
+
+    color: var(--navy);
+
+    font-size: 20px;
+}
+
+.recommendation-body p,
+.hotel-body p {
+    margin: 0;
+
+    color: var(--muted);
+
+    line-height: 1.55;
+}
+
+.recommendation-footer,
+.hotel-bottom {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-top: 16px;
+
+    padding-top: 14px;
+
+    border-top: 1px solid var(--border);
+
+    color: var(--navy);
+
+    font-weight: 700;
+}
+
+.hotel-bottom strong {
+    color: var(--navy);
+
+    font-size: 18px;
+}
+
+.hotel-bottom strong small {
+    color: var(--muted);
+
+    font-weight: 600;
+
+    font-size: 12px;
+}
+
+.selected-badge {
+    position: absolute;
+
+    top: -12px;
+
+    left: 20px;
+
+    padding: 6px 13px;
+
+    border-radius: 999px;
+
+    background: var(--teal);
+
+    color: white;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: .8px;
+
+    box-shadow: 0 8px 16px rgba(35,139,134,.3);
+}
+
+/* =========================================================
+   BUDGET — donut rendered with real light/shadow, not flat conic
+   ========================================================= */
+
+#budget {
+    margin-top: 22px;
+}
+
+.budget-layout {
+    display: grid;
+
+    grid-template-columns: 390px 1fr;
+
+    align-items: center;
+
+    gap: 55px;
+}
+
+.donut-wrapper {
+    display: grid;
+
+    place-items: center;
+
+    perspective: 900px;
+}
+
+.donut {
+    width: 290px;
+    height: 290px;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        conic-gradient(
+            var(--navy) 0 20%,
+            var(--orange) 20% 45%,
+            #4b8caf 45% 70%,
+            #e7b44f 70% 90%,
+            var(--teal) 90% 100%
+        );
+
+    box-shadow:
+        0 22px 45px rgba(16,40,88,.18),
+        inset 0 8px 18px rgba(0,0,0,.18),
+        inset 0 -6px 14px rgba(255,255,255,.10);
+
+    transform: rotateX(8deg);
+
+    transition: transform .5s var(--ease-3d);
+}
+
+.donut-wrapper:hover .donut {
+    transform: rotateX(0deg);
+}
+
+.donut-center {
+    width: 164px;
+    height: 164px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: var(--white);
+
+    box-shadow: inset 0 0 0 1px rgba(16,40,88,.04), 0 10px 20px rgba(16,40,88,.10);
+}
+
+.donut-center strong {
+    color: var(--navy);
+
+    font-size: 28px;
+}
+
+.donut-center span {
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+.budget-list {
+    display: flex;
+
+    flex-direction: column;
+}
+
+.budget-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 19px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.budget-row:last-child {
+    border-bottom: 0;
+}
+
+.budget-row span {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    color: var(--muted);
+}
+
+.dot {
+    display: inline-block;
+
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    flex-shrink: 0;
+}
+
+.stay-dot { background: var(--budget-stay); }
+.food-dot { background: var(--budget-food); }
+.activity-dot { background: var(--budget-activity); }
+.transport-dot { background: var(--budget-transport); }
+.local-dot { background: var(--budget-local); }
+
+.budget-row strong {
+    color: var(--navy);
+
+    font-size: 18px;
+}
+
+/* =========================================================
+   ADAPTIVE / INSIGHT
+   ========================================================= */
+
+.insight-card {
+    margin-top: 30px;
+
+    padding: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 35px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 30px;
+
+    background:
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(35,139,134,.10),
+            transparent 30%
+        ),
+        linear-gradient(
+            120deg,
+            #edf4ef,
+            #fffdf8
+        );
+
+    box-shadow: var(--depth-rest);
+}
+
+.insight-card h2 {
+    margin: 11px 0 7px;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: clamp(36px, 4vw, 52px);
+
+    line-height: 1;
+}
+
+.insight-card p {
+    margin: 0;
+
+    color: var(--muted);
+}
+
+.insight-card button {
+    flex-shrink: 0;
+
+    padding: 15px 23px;
+
+    border: 0;
+
+    border-radius: 14px;
+
+    background: var(--navy);
+
+    color: white;
+
+    font-weight: 800;
+
+    box-shadow: 0 6px 0 var(--navy-dark);
+
+    transition: transform .15s var(--ease-3d), box-shadow .15s var(--ease-3d), background .2s ease;
+}
+
+.insight-card button:hover {
+    background: var(--teal);
+
+    transform: translateY(-3px);
+
+    box-shadow: 0 9px 0 var(--teal-dark);
+}
+
+.insight-card button:active {
+    transform: translateY(3px);
+
+    box-shadow: 0 3px 0 var(--teal-dark);
+}
+
+/* =========================================================
+   RE-PLAN + SAVE — real classes from index.html/app.js.
+   These had NO rules at all, so #adaptInput was a raw default
+   browser textarea (tiny, with its own scrollbar) sitting flush
+   against a raw default button — that's the "overlapping arrows /
+   cut-off button" bug from the screenshots.
+   ========================================================= */
+
+.adaptive-card {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 22px;
+}
+
+.adaptive-form {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: flex-start;
+
+    gap: 14px;
+}
+
+#adaptInput {
+    flex: 1 1 320px;
+
+    min-width: 0;
+
+    min-height: 90px;
+
+    padding: 16px 18px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 16px;
+
+    background: #fbfaf6;
+
+    color: var(--navy);
+
+    outline: none;
+
+    resize: vertical;
+
+    line-height: 1.6;
+
+    box-shadow: inset 0 2px 6px rgba(16,40,88,.05);
+
+    transition: .2s ease;
+}
+
+#adaptInput:focus {
+    border-color: var(--teal);
+
+    background: white;
+
+    box-shadow: inset 0 1px 2px rgba(16,40,88,.03), 0 0 0 4px rgba(35,139,134,.08);
+}
+
+#adaptInput::placeholder {
+    color: #8b99ad;
+}
+
+.secondary-btn {
+    flex: 0 0 auto;
+
+    padding: 16px 24px;
+
+    border: 0;
+
+    border-radius: 14px;
+
+    background: var(--navy);
+
+    color: white;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    box-shadow: 0 6px 0 var(--navy-dark);
+
+    transition: transform .15s var(--ease-3d), box-shadow .15s var(--ease-3d), background .2s ease;
+}
+
+.secondary-btn:hover {
+    background: var(--teal);
+
+    transform: translateY(-3px);
+
+    box-shadow: 0 9px 0 var(--teal-dark);
+}
+
+.secondary-btn:active {
+    transform: translateY(3px);
+
+    box-shadow: 0 3px 0 var(--teal-dark);
+}
+
+.save-card {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    flex-wrap: wrap;
+
+    gap: 24px;
+
+    margin-top: 22px;
+
+    padding: 40px 44px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 28px;
+
+    background: var(--white);
+
+    box-shadow: var(--depth-rest);
+}
+
+.save-card h2 {
+    margin: 8px 0 6px;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: clamp(28px, 3vw, 38px);
+
+    line-height: 1.05;
+
+    color: var(--navy);
+}
+
+.save-card p {
+    margin: 0;
+
+    color: var(--muted);
+}
+
+.save-btn {
+    flex-shrink: 0;
+
+    padding: 15px 24px;
+
+    border: 0;
+
+    border-radius: 14px;
+
+    background: var(--teal);
+
+    color: white;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    box-shadow: 0 6px 0 var(--teal-dark);
+
+    transition: transform .15s var(--ease-3d), box-shadow .15s var(--ease-3d);
+}
+
+.save-btn:hover {
+    transform: translateY(-3px);
+
+    box-shadow: 0 9px 0 var(--teal-dark);
+}
+
+.save-btn:active {
+    transform: translateY(3px);
+
+    box-shadow: 0 3px 0 var(--teal-dark);
+}
+
+.save-btn:disabled {
+    opacity: .6;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+/* =========================================================
+   MISC — empty states, errors, weather/season cards
+   ========================================================= */
+
+.empty-state {
+    padding: 40px 20px;
+
+    text-align: center;
+
+    color: var(--muted);
+
+    border: 1px dashed var(--border);
+
+    border-radius: 18px;
+
+    background: #faf8f2;
+}
+
+.error-message {
+    padding: 12px 16px;
+
+    border-radius: 12px;
+
+    background: #fdecea;
+
+    border: 1px solid #f3c6c2;
+}
+
+.section-note {
+    margin: -10px 0 20px;
+
+    color: var(--muted);
+
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.season-card {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+}
+
+.season-card strong {
+    display: block;
+
+    margin-top: 12px;
+
+    color: var(--navy);
+
+    font-size: 22px;
+}
+
+.season-card p {
+    margin: 6px 0 0;
+
+    color: var(--muted);
+}
+
+.departure-info {
+    text-align: right;
+}
+
+.departure-info span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+.departure-info strong {
+    display: block;
+
+    margin-top: 6px;
+
+    color: var(--navy);
+
+    font-size: 18px;
+}
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+.modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 10000;
+
+    display: grid;
+
+    place-items: center;
+
+    padding: 20px;
+
+    background: rgba(8,18,42,.65);
+
+    backdrop-filter: blur(8px);
+}
+
+.modal-box {
+    position: relative;
+
+    width: min(620px, 100%);
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 42px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 28px;
+
+    background: var(--white);
+
+    box-shadow: 0 45px 110px rgba(0,0,0,.30);
+
+    animation: modal-rise .35s var(--ease-3d);
+}
+
+@keyframes modal-rise {
+    from { opacity: 0; transform: translateY(24px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-close {
+    position: absolute;
+
+    top: 15px;
+    right: 18px;
+
+    width: 40px;
+    height: 40px;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: #f0ece3;
+
+    color: var(--navy);
+
+    font-size: 25px;
+
+    cursor: pointer;
+
+    transition: transform .2s var(--ease-3d);
+}
+
+.modal-close:hover {
+    transform: rotate(90deg);
+}
+
+.modal-box h2 {
+    margin: 12px 0;
+
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: 42px;
+
+    line-height: 1;
+}
+
+.modal-box p {
+    color: var(--muted);
+
+    line-height: 1.65;
+}
+
+.modal-box textarea,
+.modal-box input {
+    width: 100%;
+
+    padding: 14px 15px;
+
+    margin-top: 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 14px;
+
+    background: #faf8f2;
+
+    color: var(--navy);
+
+    outline: none;
+
+    box-shadow: inset 0 2px 4px rgba(16,40,88,.05);
+}
+
+.modal-box textarea {
+    min-height: 130px;
+
+    resize: vertical;
+}
+
+.modal-box textarea:focus,
+.modal-box input:focus {
+    border-color: var(--teal);
+
+    box-shadow: inset 0 1px 2px rgba(16,40,88,.03), 0 0 0 4px rgba(35,139,134,.08);
+}
+
+#adaptiveStatus,
+#savedStatus {
+    margin-top: 14px;
+
+    color: var(--teal);
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+footer {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 55px 6vw;
+
+    border-top: 1px solid var(--border);
+
+    color: var(--muted);
+}
+
+footer strong {
+    font-family: "Playfair Display", Georgia, serif;
+
+    font-size: 27px;
+
+    color: var(--navy);
+}
+
+/* =========================================================
+   FOCUS
+   ========================================================= */
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+    outline: 3px solid rgba(255,122,26,.35);
+
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+    .navbar {
+        padding: 0 4%;
+    }
+
+    .navbar nav {
+        gap: 23px;
+    }
+
+    .saved-open {
+        margin-left: 20px;
+    }
+
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .transport-grid,
+    .recommendation-grid,
+    .hotel-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .budget-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .donut {
+        margin: auto;
+    }
+}
+
+/* =========================================================
+   MOBILE — flatten the 3D so nothing feels tilted/off on small
+   screens or touch devices where hover/tilt doesn't apply anyway
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+    .planner-card,
+    .budget-fit,
+    .donut,
+    .hero h1 {
+        transform: none !important;
+    }
+
+    .navbar {
+        height: auto;
+
+        min-height: 76px;
+
+        padding: 10px 5%;
+
+        flex-wrap: wrap;
+    }
+
+    .brand {
+        font-size: 25px;
+    }
+
+    .brand-icon {
+        width: 45px;
+        height: 45px;
+
+        border-radius: 13px;
+    }
+
+    .navbar nav {
+        order: 3;
+
+        width: 100%;
+
+        justify-content: center;
+
+        gap: 19px;
+
+        overflow-x: auto;
+    }
+
+    .navbar nav a {
+        font-size: 13px;
+
+        white-space: nowrap;
+    }
+
+    .saved-open,
+    .ai-pill {
+        margin-left: auto;
+
+        padding: 9px 14px;
+
+        font-size: 10px;
+    }
+
+    .hero {
+        min-height: 480px;
+
+        padding: 60px 6% 100px;
+    }
+
+    .hero h1 {
+        font-size: 53px;
+
+        letter-spacing: -2.5px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    main {
+        width: 92%;
+    }
+
+    .planner-wrapper {
+        margin-top: -55px;
+    }
+
+    .planner-card {
+        padding: 28px 22px;
+
+        border-radius: 25px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        padding: 40px 28px;
+
+        border-radius: 27px;
+    }
+
+    .plan-header h2 {
+        font-size: 58px;
+    }
+
+    .budget-fit {
+        width: 120px;
+        height: 120px;
+    }
+
+    .budget-fit strong {
+        font-size: 33px;
+    }
+
+    .insight-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .result-card {
+        padding: 27px 22px;
+
+        border-radius: 25px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .transport-grid,
+    .recommendation-grid,
+    .hotel-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-heading {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .recommendations-section h2 {
+        font-size: 45px;
+    }
+
+    .budget-layout {
+        gap: 30px;
+    }
+
+    .donut {
+        width: 235px;
+        height: 235px;
+    }
+
+    .donut-center {
+        width: 135px;
+        height: 135px;
+    }
+
+    .timeline-top {
+        flex-direction: column;
+
+        gap: 5px;
+    }
+
+    .insight-card {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        padding: 34px 26px;
+    }
+
+    .insight-card button {
+        width: 100%;
+    }
+
+    .trip-controls {
+        flex-direction: column;
+    }
+
+    .adaptive-form {
+        flex-direction: column;
+    }
+
+    .secondary-btn {
+        width: 100%;
+    }
+
+    .save-card {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        padding: 32px 26px;
+    }
+
+    .save-btn {
+        width: 100%;
+    }
+
+    .season-card {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .departure-info {
+        text-align: left;
+    }
+
+    footer {
+        flex-direction: column;
+
+        padding: 40px 6vw;
+    }
+}
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+
+@media print {
+
+    .navbar,
+    .planner-wrapper,
+    .action-bar,
+    .hero,
+    .modal,
+    footer {
+        display: none !important;
+    }
+
+    .results {
+        padding: 0;
+    }
+
+    .result-card,
+    .plan-header,
+    .insight-card {
+        box-shadow: none;
+
+        break-inside: avoid;
+    }
+}

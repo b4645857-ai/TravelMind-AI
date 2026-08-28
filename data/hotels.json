@@ -1,0 +1,32 @@
+{
+  "chennai": [
+    {
+      "id": "budget_inn_egmore",
+      "name": "Budget Inn Egmore",
+      "tier": "budget",
+      "cost_per_night_inr": 900,
+      "rating": 3.8
+    },
+    {
+      "id": "hotel_new_woodlands",
+      "name": "Hotel New Woodlands",
+      "tier": "mid",
+      "cost_per_night_inr": 2500,
+      "rating": 4.2
+    },
+    {
+      "id": "ramada_chennai",
+      "name": "Ramada Chennai Egmore",
+      "tier": "mid",
+      "cost_per_night_inr": 3800,
+      "rating": 4.3
+    },
+    {
+      "id": "itc_grand_chola",
+      "name": "ITC Grand Chola",
+      "tier": "luxury",
+      "cost_per_night_inr": 12000,
+      "rating": 4.8
+    }
+  ]
+}
